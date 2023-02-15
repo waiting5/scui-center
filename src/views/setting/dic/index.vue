@@ -6,11 +6,11 @@
 					<el-input placeholder="输入关键字进行过滤" v-model="dicFilterText" clearable></el-input>
 				</el-header>
 				<el-main class="nopadding">
-					<el-tree ref="dic" class="menu" node-key="id" :data="dicList" :props="dicProps" :highlight-current="true" :expand-on-click-node="false" :filter-node-method="dicFilterNode" @node-click="dicClick">
+					<el-tree ref="dic" class="menu" node-key="dictId" :data="dicList" :props="dicProps" :highlight-current="true" :expand-on-click-node="false" :filter-node-method="dicFilterNode" @node-click="dicClick">
 						<template #default="{node, data}">
 							<span class="custom-tree-node">
 								<span class="label">{{ node.label }}</span>
-								<span class="code">{{ data.code }}</span>
+								<span class="code">{{ data.dictType }}</span>
 								<span class="do">
 									<el-button-group>
 										<el-button icon="el-icon-edit" size="small" @click.stop="dicEdit(data)"></el-button>
@@ -34,18 +34,18 @@
 				</div>
 			</el-header>
 			<el-main class="nopadding">
-				<scTable ref="table" :apiObj="listApi" row-key="id" :params="listApiParams" @selection-change="selectionChange" stripe :paginationLayout="'prev, pager, next'">
+				<scTable ref="table" :apiObj="listApi" row-key="dictCode" :params="listApiParams" @selection-change="selectionChange" stripe :paginationLayout="'prev, pager, next'">
 					<el-table-column type="selection" width="50"></el-table-column>
 					<el-table-column label="" width="60">
 						<template #default>
 							<el-tag class="move" style="cursor: move;"><el-icon-d-caret style="width: 1em; height: 1em;"/></el-tag>
 						</template>
 					</el-table-column>
-					<el-table-column label="名称" prop="name" width="150"></el-table-column>
-					<el-table-column label="键值" prop="key" width="150"></el-table-column>
-					<el-table-column label="是否有效" prop="yx" width="100">
+					<el-table-column label="名称" prop="dictLabel" width="150"></el-table-column>
+					<el-table-column label="键值" prop="dictValue" width="150"></el-table-column>
+					<el-table-column label="是否有效" prop="status" width="100">
 						<template #default="scope">
-							<el-switch v-model="scope.row.yx" @change="changeSwitch($event, scope.row)" :loading="scope.row.$switch_yx" active-value="1" inactive-value="0"></el-switch>
+							<el-switch v-model="scope.row.status" :active-value="0" :inactive-value="1" disabled></el-switch>
 						</template>
 					</el-table-column>
 					<el-table-column label="操作" fixed="right" align="right" width="120">
@@ -92,7 +92,7 @@
 				dicList: [],
 				dicFilterText: '',
 				dicProps: {
-					label: 'name'
+					label: 'dictName'
 				},
 				listApi: null,
 				listApiParams: {},
@@ -118,10 +118,10 @@
 				var firstNode = this.dicList[0];
 				if(firstNode){
 					this.$nextTick(() => {
-						this.$refs.dic.setCurrentKey(firstNode.id)
+						this.$refs.dic.setCurrentKey(firstNode.dictId)
 					})
 					this.listApiParams = {
-						code: firstNode.code
+						dictType: firstNode.dictType
 					}
 					this.listApi = this.$API.system.dic.list;
 				}
@@ -129,7 +129,7 @@
 			//树过滤
 			dicFilterNode(value, data){
 				if (!value) return true;
-				var targetText = data.name + data.code;
+				var targetText = data.dictName + data.dictType;
 				return targetText.indexOf(value) !== -1;
 			},
 			//树增加
@@ -143,43 +143,47 @@
 			dicEdit(data){
 				this.dialog.dic = true
 				this.$nextTick(() => {
-					var editNode = this.$refs.dic.getNode(data.id);
-					var editNodeParentId =  editNode.level==1?undefined:editNode.parent.data.id
-					data.parentId = editNodeParentId
+					/*var editNode = this.$refs.dic.getNode(data.dictId);
+					var editNodeParentId =  editNode.parentId==0?undefined:editNode.parent.data.parentId
+					data.parentId = editNodeParentId*/
 					this.$refs.dicDialog.open('edit').setData(data)
 				})
 			},
 			//树点击事件
 			dicClick(data){
 				this.$refs.table.reload({
-					code: data.code
+					dictType: data.dictType
 				})
 			},
 			//删除树
 			dicDel(node, data){
-				this.$confirm(`确定删除 ${data.name} 项吗？`, '提示', {
+				this.$confirm(`确定删除 ${data.dictName} 项吗？`, '提示', {
 					type: 'warning'
-				}).then(() => {
+				}).then(async () => {
 					this.showDicloading = true;
-
 					//删除节点是否为高亮当前 是的话 设置第一个节点高亮
-					var dicCurrentKey = this.$refs.dic.getCurrentKey();
-					this.$refs.dic.remove(data.id)
-					if(dicCurrentKey == data.id){
-						var firstNode = this.dicList[0];
-						if(firstNode){
-							this.$refs.dic.setCurrentKey(firstNode.id);
-							this.$refs.table.upData({
-								code: firstNode.code
-							})
-						}else{
-							this.listApi = null;
-							this.$refs.table.tableData = []
+					const dicCurrentKey = this.$refs.dic.getCurrentKey();
+					const reqData = {dictId: data.dictId};
+					const res = await this.$API.system.dic.delTypeById.post(reqData);
+					if(res.code == 200){
+						this.$refs.dic.remove(data.dictId)
+						if (dicCurrentKey == data.dictId) {
+							var firstNode = this.dicList[0];
+							if (firstNode) {
+								this.$refs.dic.setCurrentKey(firstNode.dictId);
+								this.$refs.table.upData({
+									dictType: firstNode.dictType
+								})
+							} else {
+								this.listApi = null;
+								this.$refs.table.tableData = []
+							}
 						}
+						this.showDicloading = false;
+						this.$message.success("操作成功")
+					}else{
+						this.$alert(res.message, "提示", {type: 'error'})
 					}
-
-					this.showDicloading = false;
-					this.$message.success("操作成功")
 				}).catch(() => {
 
 				})
@@ -206,7 +210,7 @@
 				this.$nextTick(() => {
 					var dicCurrentKey = this.$refs.dic.getCurrentKey();
 					const data = {
-						dic: dicCurrentKey
+						dictType: dicCurrentKey
 					}
 					this.$refs.listDialog.open().setData(data)
 				})
@@ -220,8 +224,8 @@
 			},
 			//删除明细
 			async table_del(row, index){
-				var reqData = {id: row.id}
-				var res = await this.$API.demo.post.post(reqData);
+				var reqData = {dictCode: row.dictCode}
+				var res = await this.$API.system.dic.del.post(reqData);
 				if(res.code == 200){
 					this.$refs.table.tableData.splice(index, 1);
 					this.$message.success("删除成功")
@@ -233,52 +237,20 @@
 			async batch_del(){
 				this.$confirm(`确定删除选中的 ${this.selection.length} 项吗？`, '提示', {
 					type: 'warning'
-				}).then(() => {
+				}).then(async () => {
 					const loading = this.$loading();
-					this.selection.forEach(item => {
-						this.$refs.table.tableData.forEach((itemI, indexI) => {
-							if (item.id === itemI.id) {
-								this.$refs.table.tableData.splice(indexI, 1)
-							}
-						})
-					})
+					var res = await this.$API.system.dic.batchDel.post(this.selection);
+					console.info(res)
+					this.$refs.table.refresh()
 					loading.close();
 					this.$message.success("操作成功")
 				}).catch(() => {
 
 				})
 			},
-			//提交明细
-			saveList(){
-				this.$refs.listDialog.submit(async (formData) => {
-					this.isListSaveing = true;
-					var res = await this.$API.demo.post.post(formData);
-					this.isListSaveing = false;
-					if(res.code == 200){
-						//这里选择刷新整个表格 OR 插入/编辑现有表格数据
-						this.listDialogVisible = false;
-						this.$message.success("操作成功")
-					}else{
-						this.$alert(res.message, "提示", {type: 'error'})
-					}
-				})
-			},
 			//表格选择后回调事件
 			selectionChange(selection){
 				this.selection = selection;
-			},
-			//表格内开关事件
-			changeSwitch(val, row){
-				//1.还原数据
-				row.yx = row.yx == '1'?'0':'1'
-				//2.执行加载
-				row.$switch_yx = true;
-				//3.等待接口返回后改变值
-				setTimeout(()=>{
-					delete row.$switch_yx;
-					row.yx = val;
-					this.$message.success(`操作成功id:${row.id} val:${val}`)
-				}, 500)
 			},
 			//本地更新数据
 			handleDicSuccess(data, mode){
@@ -297,12 +269,12 @@
 					this.$refs.dic.append(data, data.parentId[0])
 					this.$refs.dic.setCurrentKey(data.id)
 				}else if(mode=='edit'){
-					var editNode = this.$refs.dic.getNode(data.id);
+					var editNode = this.$refs.dic.getNode(data.dictId);
 					//判断是否移动？
-					var editNodeParentId =  editNode.level==1?undefined:editNode.parent.data.id
+					var editNodeParentId =  editNode.parentId==0?undefined:editNode.parentId
 					if(editNodeParentId != data.parentId){
 						var obj = editNode.data;
-						this.$refs.dic.remove(data.id)
+						this.$refs.dic.remove(data.dictId)
 						this.$refs.dic.append(obj, data.parentId[0])
 					}
 					Object.assign(editNode.data, data)
@@ -311,12 +283,9 @@
 			//本地更新数据
 			handleListSuccess(data, mode){
 				if(mode=='add'){
-					data.id = new Date().getTime()
-					this.$refs.table.tableData.push(data)
+					this.$refs.table.refresh()
 				}else if(mode=='edit'){
-					this.$refs.table.tableData.filter(item => item.id===data.id ).forEach(item => {
-						Object.assign(item, data)
-					})
+					this.$refs.table.refresh()
 				}
 			}
 		}

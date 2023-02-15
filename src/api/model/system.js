@@ -20,14 +20,14 @@ export default {
 	},
 	dic: {
 		tree: {
-			url: `${config.API_URL}/system/dic/tree`,
+			url: `${config.API_URL_2}/system/dic/tree`,
 			name: "获取字典树",
 			get: async function(){
 				return await http.get(this.url);
 			}
 		},
 		list: {
-			url: `${config.API_URL}/system/dic/list`,
+			url: `${config.API_URL_2}/system/dic/data/list`,
 			name: "字典明细",
 			get: async function(params){
 				return await http.get(this.url, params);
@@ -38,6 +38,41 @@ export default {
 			name: "获取字典数据",
 			get: async function(params){
 				return await http.get(this.url, params);
+			}
+		},
+		addDicType: {
+			url: `${config.API_URL_2}/system/dic/addDicType`,
+			name: "新增字典类型",
+			post: async function(params){
+				return await http.post(this.url, params);
+			}
+		},
+		delTypeById: {
+			url: `${config.API_URL_2}/system/dic/delTypeById`,
+			name: "删除字典类型",
+			post: async function(params){
+				return await http.post(this.url, params);
+			}
+		},
+		add:{
+			url: `${config.API_URL_2}/system/dic/data/add`,
+			name: "新增字典数据",
+			post: async function(params){
+				return await http.post(this.url, params);
+			}
+		},
+		del:{
+			url: `${config.API_URL_2}/system/dic/data/deleteById`,
+			name: "新增字典数据",
+			post: async function(params){
+				return await http.post(this.url, params);
+			}
+		},
+		batchDel:{
+			url: `${config.API_URL_2}/system/dic/data/batchDel`,
+			name: "新增字典数据",
+			post: async function(params){
+				return await http.post(this.url, params);
 			}
 		}
 	},

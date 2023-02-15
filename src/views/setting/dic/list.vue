@@ -1,17 +1,17 @@
 <template>
 	<el-dialog :title="titleMap[mode]" v-model="visible" :width="400" destroy-on-close @closed="$emit('closed')">
 		<el-form :model="form" :rules="rules" ref="dialogForm" label-width="100px" label-position="left">
-			<el-form-item label="所属字典" prop="dic">
-				<el-cascader v-model="form.dic" :options="dic" :props="dicProps" :show-all-levels="false" clearable></el-cascader>
+			<el-form-item label="所属字典" prop="dictType">
+				<el-cascader v-model="form.dictType" :options="dic" :props="dicProps" :show-all-levels="false" clearable></el-cascader>
 			</el-form-item>
-			<el-form-item label="项名称" prop="name">
-				<el-input v-model="form.name" clearable></el-input>
+			<el-form-item label="项名称" prop="dictLabel">
+				<el-input v-model="form.dictLabel" clearable></el-input>
 			</el-form-item>
-			<el-form-item label="键值" prop="key">
-				<el-input v-model="form.key" clearable></el-input>
+			<el-form-item label="键值" prop="dictValue">
+				<el-input v-model="form.dictValue" clearable></el-input>
 			</el-form-item>
-			<el-form-item label="是否有效" prop="yx">
-				<el-switch v-model="form.yx" active-value="1" inactive-value="0"></el-switch>
+			<el-form-item label="是否有效" prop="status">
+				<el-switch v-model="form.status" :active-value="0" :inactive-value="1"></el-switch>
 			</el-form-item>
 		</el-form>
 		<template #footer>
@@ -34,27 +34,27 @@
 				visible: false,
 				isSaveing: false,
 				form: {
-					id: "",
-					dic: "",
-					name: "",
-					key: "",
-					yx: "1"
+					dictCode: "",
+					dictType: "",
+					dictLabel: "",
+					dictValue: "",
+					status: "1"
 				},
 				rules: {
-					dic: [
+					dictType: [
 						{required: true, message: '请选择所属字典'}
 					],
-					name: [
+					dictLabel: [
 						{required: true, message: '请输入项名称'}
 					],
-					key: [
+					dictValue: [
 						{required: true, message: '请输入键值'}
 					]
 				},
 				dic: [],
 				dicProps: {
-					value: "id",
-					label: "name",
+					value: "dictType",
+					label: "dictName",
 					emitPath: false,
 					checkStrictly: true
 				}
@@ -62,7 +62,7 @@
 		},
 		mounted() {
 			if(this.params){
-				this.form.dic = this.params.code
+				this.form.dictType = this.params.code
 			}
 			this.getDic()
 		},
@@ -75,7 +75,7 @@
 			},
 			//获取字典列表
 			async getDic(){
-				var res = await this.$API.system.dic.tree.get();
+				const res = await this.$API.system.dic.tree.get();
 				this.dic = res.data;
 			},
 			//表单提交方法
@@ -83,25 +83,26 @@
 				this.$refs.dialogForm.validate(async (valid) => {
 					if (valid) {
 						this.isSaveing = true;
-						var res = await this.$API.demo.post.post(this.form);
+						const res = await this.$API.system.dic.add.post(this.form);
 						this.isSaveing = false;
 						if(res.code == 200){
 							this.$emit('success', this.form, this.mode)
 							this.visible = false;
 							this.$message.success("操作成功")
 						}else{
-							this.$alert(res.message, "提示", {type: 'error'})
+							await this.$alert(res.message, "提示", {type: 'error'})
 						}
 					}
 				})
 			},
 			//表单注入数据
 			setData(data){
-				this.form.id = data.id
+				/*this.form.id = data.id
 				this.form.name = data.name
 				this.form.key = data.key
 				this.form.yx = data.yx
-				this.form.dic = data.dic
+				this.form.dic = data.dic*/
+				Object.assign(this.form, data)
 			}
 		}
 	}
