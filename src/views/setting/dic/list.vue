@@ -38,7 +38,7 @@
 					dictType: "",
 					dictLabel: "",
 					dictValue: "",
-					status: "1"
+					status: "0"
 				},
 				rules: {
 					dictType: [
@@ -97,11 +97,11 @@
 			},
 			//表单注入数据
 			setData(data){
-				/*this.form.id = data.id
-				this.form.name = data.name
-				this.form.key = data.key
-				this.form.yx = data.yx
-				this.form.dic = data.dic*/
+				/*this.form.dictType = data.dictType
+				this.form.dictCode = data.dictCode
+				this.form.dictLabel = data.dictLabel
+				this.form.dictValue = data.dictValue
+				this.form.status = data.status*/
 				Object.assign(this.form, data)
 			}
 		}

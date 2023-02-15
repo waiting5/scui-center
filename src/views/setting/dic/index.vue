@@ -89,6 +89,7 @@
 					info: false
 				},
 				showDicloading: true,
+				dicType:null,
 				dicList: [],
 				dicFilterText: '',
 				dicProps: {
@@ -115,8 +116,9 @@
 				this.showDicloading = false;
 				this.dicList = res.data;
 				//获取第一个节点,设置选中 & 加载明细列表
-				var firstNode = this.dicList[0];
+				const firstNode = this.dicList[0];
 				if(firstNode){
+					this.dicType = firstNode.dictType;
 					this.$nextTick(() => {
 						this.$refs.dic.setCurrentKey(firstNode.dictId)
 					})
@@ -151,6 +153,7 @@
 			},
 			//树点击事件
 			dicClick(data){
+				this.dicType = data.dictType;
 				this.$refs.table.reload({
 					dictType: data.dictType
 				})
@@ -208,9 +211,8 @@
 			addInfo(){
 				this.dialog.list = true
 				this.$nextTick(() => {
-					var dicCurrentKey = this.$refs.dic.getCurrentKey();
 					const data = {
-						dictType: dicCurrentKey
+						dictType: this.dicType
 					}
 					this.$refs.listDialog.open().setData(data)
 				})
